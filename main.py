@@ -10,27 +10,36 @@ import pandas as pd
 from pydantic import BaseModel
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
+from contextlib import asynccontextmanager
+app = FastAPI()
 url_model_svm = "https://drive.google.com/uc?export=download&id=1xylAv4t1br1R1IpoTLZF2yigOuPMKDpz"
-url_model_rf = "https://drive.google.com/uc?export=download&id=1gjXvX_qi_3Xdua-1iCxlnolIS_hK7zY6" 
+url_model_rf = "https://drive.google.com/uc?export=download&id=1gjXvX_qi_3Xdua-1iCxlnolIS_hK7zY6"
 url_data = "https://drive.google.com/uc?export=download&id=155Y7fC1jrzOzWPXa1O7bqOuomUdipr4j"
+
+# ประกาศตัวแปร global สำหรับโมเดลและข้อมูล
 model_rf = None
 model_svm = None
 df = None
-try:
-    gdown.download(url_model_rf, 'model_rf_new.pkl', quiet=False)
-    gdown.download(url_model_svm, 'model_svm.pkl', quiet=False)
-    gdown.download(url_data , "cleaned_data.csv" , quiet=False)
-    if os.path.exists('model_rf_new.pkl') and os.path.exists('model_svm.pkl') and os.path.exists('cleaned_data.csv'):
-        model_rf = joblib.load('model_rf_new.pkl')
-        model_svm = joblib.load('model_svm.pkl')
-        df = pd.read_csv('cleaned_data.csv')
-        print("Models loaded successfully!")
-    else:
-        print("Model files not found.")
-except Exception as e:
-    print (f"Error loading model: {str(e)}")
-
-app = FastAPI()
+#โหลด model ตอน start up
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global model_rf, model_svm, df
+    try:
+        # ดาวน์โหลดไฟล์ (คุณสามารถตรวจสอบว่ามีไฟล์อยู่แล้วหรือไม่)
+        gdown.download(url_model_rf, 'model_rf_new.pkl', quiet=False)
+        gdown.download(url_model_svm, 'model_svm.pkl', quiet=False)
+        gdown.download(url_data, "cleaned_data.csv", quiet=False)
+        
+        if os.path.exists('model_rf_new.pkl') and os.path.exists('model_svm.pkl') and os.path.exists('cleaned_data.csv'):
+            model_rf = joblib.load('model_rf_new.pkl')
+            model_svm = joblib.load('model_svm.pkl')
+            df = pd.read_csv('cleaned_data.csv')
+            print("Models and data loaded successfully!")
+        else:
+            print("Model or data files not found.")
+    except Exception as e:
+        print(f"Error loading model or data: {str(e)}")
+    yield
 class InputData(BaseModel):
     price: float
     quantity: int
