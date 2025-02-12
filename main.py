@@ -10,7 +10,7 @@ import pandas as pd
 from pydantic import BaseModel
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
-from contextlib import asynccontextmanager
+
 app = FastAPI()
 url_model_svm = "https://drive.google.com/uc?export=download&id=1xylAv4t1br1R1IpoTLZF2yigOuPMKDpz"
 url_model_rf = "https://drive.google.com/uc?export=download&id=1gjXvX_qi_3Xdua-1iCxlnolIS_hK7zY6"
@@ -20,9 +20,9 @@ url_data = "https://drive.google.com/uc?export=download&id=155Y7fC1jrzOzWPXa1O7b
 model_rf = None
 model_svm = None
 df = None
-#โหลด model ตอน start up
-@asynccontextmanager
-async def lifespan(app: FastAPI):
+
+@app.on_event("startup")
+async def load_models_and_data():
     global model_rf, model_svm, df
     try:
         # ดาวน์โหลดไฟล์ (คุณสามารถตรวจสอบว่ามีไฟล์อยู่แล้วหรือไม่)
@@ -39,7 +39,6 @@ async def lifespan(app: FastAPI):
             print("Model or data files not found.")
     except Exception as e:
         print(f"Error loading model or data: {str(e)}")
-    yield
 class InputData(BaseModel):
     price: float
     quantity: int
