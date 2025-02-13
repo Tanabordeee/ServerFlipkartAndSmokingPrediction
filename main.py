@@ -10,13 +10,18 @@ import pandas as pd
 from pydantic import BaseModel
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
-
+from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://client-flipkart-prediction.vercel.app"],
+    allow_methods=["GET" , "POST"], 
+    allow_headers=["*"],  
+)
 url_model_svm = "https://drive.google.com/uc?export=download&id=1xylAv4t1br1R1IpoTLZF2yigOuPMKDpz"
 url_model_rf = "https://drive.google.com/uc?export=download&id=1gjXvX_qi_3Xdua-1iCxlnolIS_hK7zY6"
 url_data = "https://drive.google.com/uc?export=download&id=155Y7fC1jrzOzWPXa1O7bqOuomUdipr4j"
 
-# ประกาศตัวแปร global สำหรับโมเดลและข้อมูล
 model_rf = None
 model_svm = None
 df = None
@@ -58,7 +63,7 @@ async def predictRF(data:InputData):
 
 @app.get("/showmodels")
 async def get_models():
-    global df  # ใช้ตัวแปร df ที่โหลดไว้ข้างต้น
+    global df 
     
     if df is None:
         return {"status": "error", "message": "Dataset not loaded."}
