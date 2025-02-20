@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File
 import base64
 from io import BytesIO
 import matplotlib.pyplot as plt
@@ -11,33 +11,35 @@ from pydantic import BaseModel
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
 from fastapi.middleware.cors import CORSMiddleware
+from PIL import Image
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://client-flipkart-prediction.vercel.app"],
+    allow_origins=["*"],
     allow_methods=["GET" , "POST"], 
     allow_headers=["*"],  
 )
 url_model_svm = "https://drive.google.com/uc?export=download&id=1xylAv4t1br1R1IpoTLZF2yigOuPMKDpz"
 url_model_rf = "https://drive.google.com/uc?export=download&id=1gjXvX_qi_3Xdua-1iCxlnolIS_hK7zY6"
 url_data = "https://drive.google.com/uc?export=download&id=155Y7fC1jrzOzWPXa1O7bqOuomUdipr4j"
-
+url_model_neural = "https://drive.google.com/uc?export=download&id=1cPDW-dOH8tvgcsPcSuMIfzZBmMxDdRJ0"
+model_neural = None
 model_rf = None
 model_svm = None
 df = None
-
 @app.on_event("startup")
 async def load_models_and_data():
-    global model_rf, model_svm, df
+    global model_rf, model_svm, df,model_neural
     try:
         # ดาวน์โหลดไฟล์ (คุณสามารถตรวจสอบว่ามีไฟล์อยู่แล้วหรือไม่)
         gdown.download(url_model_rf, 'model_rf_new.pkl', quiet=False)
         gdown.download(url_model_svm, 'model_svm.pkl', quiet=False)
         gdown.download(url_data, "cleaned_data.csv", quiet=False)
-        
-        if os.path.exists('model_rf_new.pkl') and os.path.exists('model_svm.pkl') and os.path.exists('cleaned_data.csv'):
+        gdown.download(url_model_neural , "smoking_detection_model.pkl" , quiet=False)
+        if os.path.exists('model_rf_new.pkl') and os.path.exists('model_svm.pkl') and os.path.exists('cleaned_data.csv') and os.path.exists('smoking_detection_model.pkl'):
             model_rf = joblib.load('model_rf_new.pkl')
             model_svm = joblib.load('model_svm.pkl')
+            model_neural = joblib.load('smoking_detection_model.pkl')
             df = pd.read_csv('cleaned_data.csv')
             print("Models and data loaded successfully!")
         else:
@@ -113,3 +115,21 @@ async def get_models():
         "plot_svm_base64": plot_svm_base64,
         "plot_rf_base64": plot_rf_base64
     }
+
+@app.post("/predictimage")
+async def predict(file: UploadFile = File(...)):
+    img = Image.open(file.file)
+    img = img.resize((224, 224)) 
+    img = np.array(img) / 255.0 
+    img = np.expand_dims(img, axis=0) 
+    pred = model_neural.predict(img)
+    result = ""
+    if pred >= 0.5:
+        result = "Smoking"
+    else:
+        result = "Not Smoking"
+    buffer = BytesIO()
+    img.save(buffer, format="JPEG")
+    image = base64.b64encode(buffer.getvalue()).decode()
+    return{"result":result ,"image":image}
+
