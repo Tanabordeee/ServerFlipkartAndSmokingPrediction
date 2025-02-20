@@ -10,4 +10,4 @@ pydantic
 python-multipart
 dill
 keras
-tensorflow
+tensorflow-cpu==2.10.0
