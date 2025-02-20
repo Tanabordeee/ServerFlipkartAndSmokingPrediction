@@ -7,3 +7,4 @@ matplotlib
 joblib
 gdown
 pydantic
+python-multipart
