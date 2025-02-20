@@ -134,6 +134,8 @@ async def get_models():
 async def predict(file: UploadFile = File(...)):
     global model_neural
     if model_neural is None:
+        import tensorflow as tf
+        tf.config.set_visible_devices([], 'GPU')
         model_neural = joblib.load('smoking_detection_model.pkl')  # Lazy load model when needed
     
     # Open and preprocess image
