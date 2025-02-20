@@ -9,3 +9,5 @@ gdown
 pydantic
 python-multipart
 dill
+keras
+tensorflow
