@@ -8,3 +8,4 @@ joblib
 gdown
 pydantic
 python-multipart
+dill
