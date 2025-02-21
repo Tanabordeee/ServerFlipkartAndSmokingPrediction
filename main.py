@@ -33,7 +33,10 @@ model_neural = None
 model_rf = None
 model_svm = None
 df = None
-
+#free memory function
+async def unload_model(model):
+    del model
+    gc.collect()
 @app.on_event("startup")
 async def load_models_and_data():
     global model_rf, model_svm, df, model_neural
@@ -62,6 +65,9 @@ async def Svm_predictions(data: InputData):
     input_features = pd.DataFrame([[data.price, data.quantity, data.customer_rating]], columns=["Price (INR)", "Quantity Sold", "Customer Rating"])
     prediction = model_svm.predict(input_features)
     
+    unload_model(model_svm)
+    model_svm = None
+
     return {"status": "success", "message": "Prediction successful", "prediction": prediction[0]}
 
 @app.post("/predictRF")
@@ -73,6 +79,9 @@ async def predictRF(data: InputData):
     input_features = pd.DataFrame([[data.price, data.quantity, data.customer_rating]], columns=["Price (INR)", "Quantity Sold", "Customer Rating"])
     prediction = model_rf.predict(input_features)
     
+    unload_model(model_rf)
+    model_rf = None
+
     return {"status": "success", "message": "Prediction successful", "prediction": prediction[0]}
 
 @app.get("/showmodels")
@@ -123,6 +132,11 @@ async def get_models():
     buf_rf.close()
     plt.close(fig)
 
+    unload_model(model_rf)
+    unload_model(model_svm)
+    model_rf = None
+    model_svm = None
+
     return {
         "status": "success",
         "mae_svm": mae_svm,
@@ -160,6 +174,7 @@ async def predict(file: UploadFile = File(...)):
     # Free up memory after prediction
     del img
     del img_pil
-    gc.collect()
+    await unload_model(model_neural)
+    model_neural = None
 
     return {"result": result, "image": image}
