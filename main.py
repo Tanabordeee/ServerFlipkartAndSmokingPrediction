@@ -12,6 +12,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
+from tensorflow.keras.models import load_model
 import gc
 
 app = FastAPI()
@@ -26,7 +27,7 @@ app.add_middleware(
 url_model_svm = "https://drive.google.com/uc?export=download&id=1xylAv4t1br1R1IpoTLZF2yigOuPMKDpz"
 url_model_rf = "https://drive.google.com/uc?export=download&id=1gjXvX_qi_3Xdua-1iCxlnolIS_hK7zY6"
 url_data = "https://drive.google.com/uc?export=download&id=155Y7fC1jrzOzWPXa1O7bqOuomUdipr4j"
-url_model_neural = "https://drive.google.com/uc?export=download&id=1cPDW-dOH8tvgcsPcSuMIfzZBmMxDdRJ0"
+url_model_neural = "https://drive.google.com/uc?export=download&id=1AYBCQtSA0fc9xfqoZpfjAXpe43Oz8m06"
 
 model_neural = None
 model_rf = None
@@ -41,7 +42,7 @@ async def load_models_and_data():
         gdown.download(url_model_rf, 'model_rf_new.pkl', quiet=False)
         gdown.download(url_model_svm, 'model_svm.pkl', quiet=False)
         gdown.download(url_data, "cleaned_data.csv", quiet=False)
-        gdown.download(url_model_neural, "smoking_detection_model.pkl", quiet=False)
+        gdown.download(url_model_neural, "smoking_detection_model.h5", quiet=False)
 
         print("Files downloaded successfully!")
     except Exception as e:
@@ -136,11 +137,13 @@ async def predict(file: UploadFile = File(...)):
     if model_neural is None:
         import tensorflow as tf
         tf.config.set_visible_devices([], 'GPU')
-        model_neural = joblib.load('smoking_detection_model.pkl')  # Lazy load model when needed
+        model_neural = tf.keras.models.load_model('smoking_detection_model.h5')  # Lazy load model when needed
     
     # Open and preprocess image
     img = Image.open(file.file)
-    img = img.resize((224, 224))  # Resize image
+    if img.mode != 'RGB':
+        img = img.convert('RGB')
+    img = img.resize((32, 32))  # Resize image
     img = np.array(img) / 255.0  # Normalize image
     img = np.expand_dims(img, axis=0)  # Add batch dimension
     
