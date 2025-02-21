@@ -27,7 +27,7 @@ app.add_middleware(
 url_model_svm = "https://drive.google.com/uc?export=download&id=1xylAv4t1br1R1IpoTLZF2yigOuPMKDpz"
 url_model_rf = "https://drive.google.com/uc?export=download&id=1gjXvX_qi_3Xdua-1iCxlnolIS_hK7zY6"
 url_data = "https://drive.google.com/uc?export=download&id=155Y7fC1jrzOzWPXa1O7bqOuomUdipr4j"
-url_model_neural = "https://drive.google.com/uc?export=download&id=1AYBCQtSA0fc9xfqoZpfjAXpe43Oz8m06"
+url_model_neural = "https://drive.google.com/uc?export=download&id=1jt1wziwMvqGvmq6SclZ8XAHLS65Y3R74"
 
 model_neural = None
 model_rf = None
@@ -143,7 +143,7 @@ async def predict(file: UploadFile = File(...)):
     img = Image.open(file.file)
     if img.mode != 'RGB':
         img = img.convert('RGB')
-    img = img.resize((32, 32))  # Resize image
+    img = img.resize((224, 224))  # Resize image
     img = np.array(img) / 255.0  # Normalize image
     img = np.expand_dims(img, axis=0)  # Add batch dimension
     
