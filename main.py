@@ -14,7 +14,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
 from tensorflow.keras.models import load_model
 import gc
-
 app = FastAPI()
 
 app.add_middleware(
@@ -65,7 +64,7 @@ async def Svm_predictions(data: InputData):
     input_features = pd.DataFrame([[data.price, data.quantity, data.customer_rating]], columns=["Price (INR)", "Quantity Sold", "Customer Rating"])
     prediction = model_svm.predict(input_features)
     
-    unload_model(model_svm)
+    await unload_model(model_svm)
     model_svm = None
 
     return {"status": "success", "message": "Prediction successful", "prediction": prediction[0]}
@@ -79,7 +78,7 @@ async def predictRF(data: InputData):
     input_features = pd.DataFrame([[data.price, data.quantity, data.customer_rating]], columns=["Price (INR)", "Quantity Sold", "Customer Rating"])
     prediction = model_rf.predict(input_features)
     
-    unload_model(model_rf)
+    await unload_model(model_rf)
     model_rf = None
 
     return {"status": "success", "message": "Prediction successful", "prediction": prediction[0]}
@@ -132,8 +131,8 @@ async def get_models():
     buf_rf.close()
     plt.close(fig)
 
-    unload_model(model_rf)
-    unload_model(model_svm)
+    await unload_model(model_rf)
+    await unload_model(model_svm)
     model_rf = None
     model_svm = None
 
